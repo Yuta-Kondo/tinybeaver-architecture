@@ -324,6 +324,8 @@
   }
   footer .stack{ color:var(--ink-soft); }
   footer code{ background:none; padding:0; color:var(--ink-faint); }
+  footer .links{ margin-top:14px; }
+  footer .links a{ color:var(--ink-soft); }
 
   @media (max-width:560px){
     .cats{ grid-template-columns:1fr; }
@@ -581,6 +583,7 @@
   <footer>
     <p class="stack">FastAPI · SQLite (FTS5 + fact/entity/relation tables) · React + Vite · Claude Haiku (classify, extract, reflect) · GLM-5.2 (Self-MoA) · Gemini embeddings (semantic retrieval).</p>
     <p>Model choice per call is deliberate, not default-everything-to-one-vendor — cheap structural work stays on Haiku, the debate pipeline stays on one vendor per Self-MoA's own finding, chosen in part after checking provider training/retention stances against what tinybeaver stores.</p>
+    <p class="links"><a href="https://github.com/Yuta-Kondo/tinybeaver">Source on GitHub →</a></p>
   </footer>
 
 </main>
