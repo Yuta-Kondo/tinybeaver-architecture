@@ -94,6 +94,11 @@
     text-wrap:balance;
     margin:0 0 18px;
   }
+  .ai-note{
+    font-size:13.5px;
+    color:var(--ink-faint);
+    margin:0 0 14px;
+  }
   .subtitle{
     font-size:19px;
     line-height:1.55;
@@ -341,6 +346,7 @@
 
   <p class="eyebrow">Solo project — personal AI assistant</p>
   <h1>Fact Graph &amp; Self-MoA</h1>
+  <p class="ai-note">I used AI (Claude Code) for writing this website.</p>
   <p class="subtitle">Two architecture decisions inside <b>tinybeaver</b>, my personal AI assistant: treating memory as a queryable knowledge graph instead of a growing chat transcript, and treating "think harder" as a governed parallel debate instead of one longer prompt.</p>
 
   <div class="meta">
@@ -592,7 +598,6 @@
     <p class="stack">FastAPI · SQLite (FTS5 + fact/entity/relation tables) · React + Vite · Claude Haiku (classify, extract, reflect) · GLM-5.2 (Self-MoA) · Gemini embeddings (semantic retrieval).</p>
     <p>Model choice per call is deliberate, not default-everything-to-one-vendor — cheap structural work stays on Haiku, the debate pipeline stays on one vendor per Self-MoA's own finding, chosen in part after checking provider training/retention stances against what tinybeaver stores.</p>
     <p class="links"><a href="https://github.com/Yuta-Kondo/tinybeaver">Source on GitHub →</a></p>
-    <p>I used AI (Claude Code) for writing this website.</p>
   </footer>
 
 </main>
