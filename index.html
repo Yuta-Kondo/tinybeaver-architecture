@@ -146,6 +146,9 @@
     max-width:66ch;
   }
   p.lede{ color:var(--ink-soft); }
+  main > ul{ margin:0 0 20px; padding-left:0; list-style:none; max-width:66ch; }
+  main > ul li{ position:relative; padding-left:22px; font-size:16.5px; line-height:1.7; margin:0 0 12px; }
+  main > ul li::before{ content:"—"; position:absolute; left:0; color:var(--accent); }
   a{ color:var(--accent); text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 
   code, .mono{
@@ -394,7 +397,16 @@
 
   <p>Sitting above the eleven categories is one always-on <b>core profile</b> — a short synthesized paragraph capped at 3,500&nbsp;characters, refreshed by the write path when identity-level facts change. It's the only thing injected on every single turn regardless of topic; everything else is retrieved on demand.</p>
 
-  <h2><span class="num">03</span>Read path: hybrid retrieval under a budget</h2>
+  <h2><span class="num">03</span>How this differs from ChatGPT/Claude's built-in memory</h2>
+  <p>Both ChatGPT and Claude.ai now ship a "Memory" feature of their own — the model saves facts about you across conversations there too, so the honest question is what a fact graph actually buys over that. I don't have visibility into either product's internals, so this is a product-level comparison based on what's visible as a user, not a claim about their code:</p>
+  <ul>
+    <li><b>Flat list vs. structured store.</b> What you can see and edit in ChatGPT's or Claude's memory panel is a short list of free-text bullets. tinybeaver's facts carry a category, links to typed entities, and time-bound relations — the equivalent of asking "everything currently true about my immigration status" and getting a filtered, deduplicated answer, with a visible reason each fact was retrieved (FTS match, semantic match, or both).</li>
+    <li><b>General-purpose vs. single-user-tuned.</b> A consumer memory feature has to work reasonably for hundreds of millions of unrelated people through one shared mechanism, which is presumably why it stays conservative in size and opaque about retrieval — it can't be hand-tuned per user. tinybeaver only ever serves one person, so every number in the pipeline — eleven category domains, a 7,500-character budget, a 0.88 dedup threshold, the RRF weights — is tuned to one specific life, and I can see and change all of it.</li>
+    <li><b>Mine, not a product feature.</b> If a vendor changes or retires their memory feature, whatever it stored goes with the product. This is a SQLite file on infrastructure I control — I own the schema and the retention rule (supersede, never overwrite) instead of inheriting whatever policy ships next.</li>
+  </ul>
+  <p>I genuinely can't say with confidence whether ChatGPT's or Claude's memory is more or less size-constrained than mine under the hood. What I can say is that mine is inspectable end-to-end and built around one person's actual life domains, rather than a general mechanism that has to generalize across everyone's.</p>
+
+  <h2><span class="num">04</span>Read path: hybrid retrieval under a budget</h2>
   <p>A cheap classifier call reads the incoming message and returns up to four relevant categories — never inventing new ones, since the catalog is closed. Retrieval then runs <b>two searches in parallel</b> against the fact table: SQLite FTS5 keyword search (BM25-ranked) and cosine similarity over Gemini embeddings, kept above a <code>0.28</code> similarity floor. The two ranked lists are merged with <b>reciprocal rank fusion</b> rather than either running alone:</p>
 
   <div class="panel"><pre>score[fact] += weight / (60 + rank)   <span class="k">·</span>  weight = 1.0 for FTS, 1.2 for semantic</pre></div>
@@ -404,65 +416,66 @@
   <p>All of it is assembled against a hard <b>7,500-character context budget</b>, trimmed greedily line-by-line so nothing gets cut mid-sentence — the model gets a bounded, structured memory block every turn, not an ever-growing one.</p>
 
   <figure>
-    <svg viewBox="0 0 960 300" role="img" aria-label="Read path: user message goes through a classifier and hybrid retrieval into a context block feeding the model reply; write path: the model's reply goes through an LLM extractor back into the same SQLite fact graph, closing the loop for the next turn.">
+    <svg viewBox="0 0 980 360" role="img" aria-label="Read path: user message goes through a classifier and hybrid retrieval into a context block feeding the model reply. Write path: the model's reply goes through an LLM extractor back into the same SQLite fact graph. Both paths meet at the fact graph, closing the loop for the next turn.">
       <defs>
         <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/>
         </marker>
       </defs>
       <g fill="none" stroke="currentColor" stroke-width="1.2" opacity=".55">
-        <line x1="150" y1="65" x2="228" y2="65" marker-end="url(#arr)"/>
-        <line x1="335" y1="65" x2="335" y2="128" marker-end="url(#arr)"/>
-        <line x1="335" y1="165" x2="527" y2="70" marker-end="url(#arr)"/>
-        <line x1="748" y1="65" x2="792" y2="65" marker-end="url(#arr)"/>
-        <line x1="855" y1="90" x2="855" y2="128" marker-end="url(#arr)"/>
-        <line x1="855" y1="165" x2="600" y2="222" marker-end="url(#arr)"/>
-        <line x1="335" y1="200" x2="470" y2="230" marker-end="url(#arr)"/>
+        <line x1="170" y1="62" x2="206" y2="62" marker-end="url(#arr)"/>
+        <line x1="275" y1="90" x2="303" y2="146" marker-end="url(#arr)"/>
+        <line x1="400" y1="186" x2="556" y2="90" marker-end="url(#arr)"/>
+        <line x1="780" y1="62" x2="816" y2="62" marker-end="url(#arr)"/>
+        <line x1="890" y1="90" x2="881" y2="146" marker-end="url(#arr)"/>
+        <line x1="800" y1="222" x2="637" y2="286" marker-end="url(#arr)"/>
+        <line x1="305" y1="222" x2="458" y2="286" marker-end="url(#arr)"/>
       </g>
-      <text x="192" y="45" text-anchor="middle" class="svg-label" fill="currentColor" opacity=".6">picks ≤4 categories</text>
-      <text x="740" y="120" text-anchor="middle" class="svg-label" fill="currentColor" opacity=".6">turn → JSON facts</text>
-      <text x="430" y="118" text-anchor="middle" class="svg-label" fill="currentColor" opacity=".6">FTS ∪ embeddings, RRF, top-24</text>
-      <text x="470" y="270" text-anchor="middle" class="svg-label" fill="currentColor" opacity=".6">write: supersede + dedup ≥.88 cos</text>
+      <text x="275" y="16" text-anchor="middle" class="svg-label" fill="currentColor" opacity=".6">picks ≤4 categories</text>
+      <text x="480" y="133" text-anchor="middle" class="svg-label" fill="currentColor" opacity=".6">FTS ∪ embeddings, RRF, top-24</text>
+      <text x="790" y="122" text-anchor="end" class="svg-label" fill="currentColor" opacity=".6">turn → JSON facts</text>
+      <text x="382" y="257" text-anchor="middle" class="svg-label" fill="currentColor" opacity=".6">read</text>
+      <text x="720" y="257" text-anchor="middle" class="svg-label" fill="currentColor" opacity=".6">write: supersede + dedup ≥.88 cos</text>
 
       <g>
-        <rect x="20" y="38" width="130" height="54" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
-        <text x="85" y="70" text-anchor="middle" class="svg-title" fill="currentColor">User message</text>
+        <rect x="20" y="34" width="150" height="56" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
+        <text x="95" y="67" text-anchor="middle" class="svg-title" fill="currentColor">User message</text>
       </g>
       <g>
-        <rect x="228" y="38" width="107" height="54" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
-        <text x="281" y="65" text-anchor="middle" class="svg-title" fill="currentColor">Classifier</text>
-        <text x="281" y="79" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">Haiku</text>
+        <rect x="210" y="34" width="130" height="56" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
+        <text x="275" y="61" text-anchor="middle" class="svg-title" fill="currentColor">Classifier</text>
+        <text x="275" y="75" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">Haiku</text>
       </g>
       <g>
-        <rect x="252" y="128" width="166" height="72" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
-        <text x="335" y="158" text-anchor="middle" class="svg-title" fill="currentColor">Hybrid retrieve</text>
-        <text x="335" y="174" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">FTS5 + cosine</text>
-        <text x="335" y="188" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">+ 1-hop entities</text>
+        <rect x="210" y="150" width="190" height="72" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
+        <text x="305" y="180" text-anchor="middle" class="svg-title" fill="currentColor">Hybrid retrieve</text>
+        <text x="305" y="196" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">FTS5 + cosine</text>
+        <text x="305" y="210" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">+ 1-hop entities</text>
       </g>
       <g>
-        <rect x="527" y="38" width="221" height="54" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
-        <text x="637" y="70" text-anchor="middle" class="svg-title" fill="currentColor">Context block (≤7,500 ch)</text>
+        <rect x="560" y="34" width="220" height="56" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
+        <text x="670" y="67" text-anchor="middle" class="svg-title" fill="currentColor">Context block (≤7,500 ch)</text>
       </g>
       <g>
-        <rect x="792" y="38" width="130" height="54" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
-        <text x="857" y="70" text-anchor="middle" class="svg-title" fill="currentColor">Reply (streamed)</text>
+        <rect x="820" y="34" width="140" height="56" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
+        <text x="890" y="67" text-anchor="middle" class="svg-title" fill="currentColor">Reply (streamed)</text>
       </g>
       <g>
-        <rect x="792" y="128" width="130" height="72" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
-        <text x="857" y="158" text-anchor="middle" class="svg-title" fill="currentColor">Extractor</text>
-        <text x="857" y="174" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">Haiku, strict</text>
-        <text x="857" y="188" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">JSON schema</text>
+        <rect x="800" y="150" width="160" height="72" rx="9" fill="none" stroke="currentColor" opacity=".8"/>
+        <text x="880" y="180" text-anchor="middle" class="svg-title" fill="currentColor">Extractor</text>
+        <text x="880" y="196" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">Haiku, strict</text>
+        <text x="880" y="210" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">JSON schema</text>
       </g>
       <g>
-        <rect x="380" y="222" width="220" height="58" rx="9" fill="currentColor" opacity=".08" stroke="currentColor"/>
-        <text x="490" y="248" text-anchor="middle" class="svg-title" fill="currentColor">SQLite fact graph</text>
-        <text x="490" y="263" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">facts · entities · relations</text>
+        <rect x="420" y="290" width="220" height="54" rx="9" fill="currentColor" opacity=".08" stroke="currentColor"/>
+        <text x="530" y="316" text-anchor="middle" class="svg-title" fill="currentColor">SQLite fact graph</text>
+        <text x="530" y="332" text-anchor="middle" class="svg-sub" fill="currentColor" opacity=".6">facts · entities · relations</text>
       </g>
     </svg>
     <figcaption>Fig. 1 — Read and write are two separate LLM calls that meet at one store. This turn's extracted facts are visible to next turn's retrieval — the memory closes the loop rather than living only in the transcript.</figcaption>
   </figure>
 
-  <h2><span class="num">04</span>Write path: extraction, not transcription</h2>
+  <h2><span class="num">05</span>Write path: extraction, not transcription</h2>
   <p>After each reply, a second Haiku call — not the main model, to keep it cheap — reads the turn and returns strict JSON: zero or more atomic facts, any new entities they mention, relations between entities, and an optional patch to the core profile. It's told explicitly to emit <i>one fact per item, no essays, no general knowledge</i> — the extraction target is a database row, not a summary.</p>
   <p>Two safeguards keep the graph from just growing forever. Before a new fact is inserted, its embedding is compared against active facts in the same category; anything ≥0.88 cosine similarity is deactivated as a near-duplicate. And each category is capped at 80 active facts, oldest first to go. A separate "reflect" pass can be run on demand — an LLM reviews the whole active fact list at once and proposes merges or deactivations that per-turn writes wouldn't catch, since no single turn sees the full graph.</p>
 
@@ -470,7 +483,7 @@
     <p><b>Why supersede instead of overwrite?</b> A <code>finance</code> fact from March and a contradicting one from August are both real — the second didn't erase the first, it replaced it at a point in time. Soft-deleting with a <code>superseded_by</code> pointer keeps that history queryable instead of just betting the newest write is always right.</p>
   </div>
 
-  <h2><span class="num">05</span>Self-MoA: debate instead of a longer prompt</h2>
+  <h2><span class="num">06</span>Self-MoA: debate instead of a longer prompt</h2>
   <p class="lede">The memory system answers "what does the model know." Self-MoA is a separate answer to "how hard should it think" — for questions worth the extra latency and cost, tinybeaver runs three parallel proposers on GLM-5.2 and has a fourth call synthesize them, rather than asking one model to be advocate, critic, and planner in a single pass.</p>
 
   <p>The design follows <a href="https://arxiv.org/abs/2502.00674">Rethinking Mixture-of-Agents</a> (2025): mixing several different vendor models as proposers tends to <i>lower</i> average proposal quality faster than the vendor variety helps, so all three proposers here are the same strong model. Diversity comes from three genuinely distinct system prompts and three different temperatures, not a shared prompt with a role label stapled on:</p>
@@ -532,7 +545,6 @@
         <line x1="380" y1="94" x2="380" y2="168" marker-end="url(#arr2)"/>
         <line x1="630" y1="94" x2="430" y2="168" marker-end="url(#arr2)"/>
       </g>
-      <text x="380" y="130" text-anchor="middle" class="svg-label" fill="currentColor" opacity=".6">3 drafts + confidence</text>
 
       <rect x="280" y="168" width="200" height="56" rx="9" fill="currentColor" opacity=".08" stroke="currentColor"/>
       <text x="380" y="192" text-anchor="middle" class="svg-title" fill="currentColor">Synthesizer</text>
@@ -555,7 +567,7 @@
     <span>done</span>
   </div>
 
-  <h2><span class="num">06</span>What's still rough</h2>
+  <h2><span class="num">07</span>What's still rough</h2>
   <ul class="tradeoffs">
     <li>
       <div class="tag">no router</div>
