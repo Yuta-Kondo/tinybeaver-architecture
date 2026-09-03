@@ -357,7 +357,7 @@
   </div>
 
   <h2><span class="num">01</span>Why not just a bigger prompt</h2>
-  <p>The first version of tinybeaver's memory was one markdown file per topic, rewritten wholesale after every turn. It worked until it didn't: topics overlapped (was a visa question <code>immigration</code> or <code>finance</code>?), files grew without bound, and there was no way to say "this fact replaced that one" — only "this file now reads differently." The fix wasn't a bigger context window; it was giving memory a schema.</p>
+  <p>The first version of tinybeaver's memory was one markdown file per topic, rewritten wholesale after every turn. It worked until it didn't: topics overlapped (was a legal question <code>admin</code> or <code>money</code>?), files grew without bound, and there was no way to say "this fact replaced that one" — only "this file now reads differently." The fix wasn't a bigger context window; it was giving memory a schema.</p>
 
   <h2><span class="num">02</span>Memory as a fact graph</h2>
   <p>Every personal fact tinybeaver learns is stored as one row: a category, a text string, and links to the entities it involves. Facts don't get overwritten — a changed fact <b>supersedes</b> the old one, which is soft-deactivated and kept for history. Entities (people, orgs, places, projects) sit in their own table and connect through <b>time-bound relations</b> — an edge has a <code>valid_from</code> and gets a <code>valid_to</code> stamped shut when it's replaced, so the graph can represent "advised by X, then Y" without losing the first fact.</p>
@@ -383,15 +383,15 @@
   </div>
 
   <div class="cats">
-    <div><span class="slug">identity</span><span class="desc">Who Yuta is — background, values, biography</span></div>
-    <div><span class="slug">admin</span><span class="desc">Immigration, government, legal, visas, paperwork</span></div>
-    <div><span class="slug">career</span><span class="desc">PhD, research, jobs, advisors, professional work</span></div>
+    <div><span class="slug">identity</span><span class="desc">Background, values, biography</span></div>
+    <div><span class="slug">admin</span><span class="desc">Government, legal, and administrative paperwork</span></div>
+    <div><span class="slug">career</span><span class="desc">Work, research, jobs, professional life</span></div>
     <div><span class="slug">money</span><span class="desc">Banking, budget, taxes, investments</span></div>
-    <div><span class="slug">home</span><span class="desc">Housing, address, landlord, neighborhood</span></div>
+    <div><span class="slug">home</span><span class="desc">Housing, address, neighborhood</span></div>
     <div><span class="slug">body</span><span class="desc">Health, fitness, sleep, medical</span></div>
-    <div><span class="slug">people</span><span class="desc">Family, dating, friends, social relationships</span></div>
+    <div><span class="slug">people</span><span class="desc">Family, friends, social relationships</span></div>
     <div><span class="slug">craft</span><span class="desc">Skills, tools, languages, engineering practice</span></div>
-    <div><span class="slug">play</span><span class="desc">Hobbies, recreation, fun</span></div>
+    <div><span class="slug">play</span><span class="desc">Hobbies and recreation</span></div>
     <div><span class="slug">ops</span><span class="desc">How the assistant itself should behave</span></div>
   </div>
 
@@ -480,7 +480,7 @@
   <p>Two safeguards keep the graph from just growing forever. Before a new fact is inserted, its embedding is compared against active facts in the same category; anything ≥0.88 cosine similarity is deactivated as a near-duplicate. And each category is capped at 80 active facts, oldest first to go. A separate "reflect" pass can be run on demand — an LLM reviews the whole active fact list at once and proposes merges or deactivations that per-turn writes wouldn't catch, since no single turn sees the full graph.</p>
 
   <div class="callout">
-    <p><b>Why supersede instead of overwrite?</b> A <code>finance</code> fact from March and a contradicting one from August are both real — the second didn't erase the first, it replaced it at a point in time. Soft-deleting with a <code>superseded_by</code> pointer keeps that history queryable instead of just betting the newest write is always right.</p>
+    <p><b>Why supersede instead of overwrite?</b> A <code>money</code> fact from March and a contradicting one from August are both real — the second didn't erase the first, it replaced it at a point in time. Soft-deleting with a <code>superseded_by</code> pointer keeps that history queryable instead of just betting the newest write is always right.</p>
   </div>
 
   <h2><span class="num">06</span>Self-MoA: debate instead of a longer prompt</h2>
