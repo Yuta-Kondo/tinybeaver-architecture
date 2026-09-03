@@ -108,6 +108,26 @@
     gap:8px;
     margin:0 0 56px;
   }
+  .disclosure{
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    line-height:1.5;
+    color:var(--accent-deep);
+    background:var(--accent-soft);
+    border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius:8px;
+    padding:9px 14px;
+    margin:0 0 28px;
+    max-width:66ch;
+  }
+  .disclosure .mark{
+    flex:0 0 auto;
+    color:var(--accent);
+    font-size:14px;
+  }
   .meta span{
     font-family:'IBM Plex Mono', monospace;
     font-size:12px;
@@ -342,6 +362,9 @@
   <p class="eyebrow">Solo project — personal AI assistant</p>
   <h1>Fact Graph &amp; Self-MoA</h1>
   <p class="subtitle">Two architecture decisions inside <b>tinybeaver</b>, my personal AI assistant: treating memory as a queryable knowledge graph instead of a growing chat transcript, and treating "think harder" as a governed parallel debate instead of one longer prompt.</p>
+
+  <div class="disclosure"><span class="mark">✦</span><span>AI-assisted: Claude Code wrote the app this page describes and drafted this write-up. Facts here are checked against the source — see "What's still rough" for the parts I'm not glossing over.</span></div>
+
   <div class="meta">
     <span>FastAPI + SQLite + React</span>
     <span>Claude · GLM-5.2 · Gemini</span>
